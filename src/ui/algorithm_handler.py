@@ -16,19 +16,25 @@ ALGORITHMS: dict[str, type[ChessSolver]]= {
 }
 
 class AlgorithmHandler:
-    def __init__(self, scene):
+    def __init__(self, scene, start_y=None):
         self.scene = scene
         self.logic = scene.logic
 
-        self.panel_width = scene.SCREEN_WIDTH // 5
-        self.base_x = scene.SCREEN_WIDTH - self.panel_width - 50 
-        self.start_y = scene.MARGIN + scene.SCREEN_HEIGHT // 8 + 10
-        self.gap = 10
+        if start_y is None:
+            self.start_y = scene.MARGIN + scene.SCREEN_HEIGHT // 8 + 10
+        else:
+            self.start_y = start_y
+
+        self.panel_width = scene.RIGHT_PANEL_WIDTH
+        self.base_x = scene.SCREEN_WIDTH - self.panel_width - scene.MARGIN
+        self.gap = int(scene.SCREEN_HEIGHT * 0.005)
+
+        adaptive_font_size = int(scene.SCREEN_HEIGHT * 0.0246)
 
         self.stats_panels = {
-            "A*": StatsPanel(self.base_x, 0, self.panel_width, 25, ["A* Status"]),
-            "BFS": StatsPanel(self.base_x, 0, self.panel_width, 25, ["BFS Status"]),
-            "DFS": StatsPanel(self.base_x, 0, self.panel_width, 25, ["DFS Status"])
+            "A*": StatsPanel(self.base_x, 0, self.panel_width, font_size=adaptive_font_size, text_list=["A* Status"]),
+            "BFS": StatsPanel(self.base_x, 0, self.panel_width, font_size=adaptive_font_size, text_list=["BFS Status"]),
+            "DFS": StatsPanel(self.base_x, 0, self.panel_width, font_size=adaptive_font_size, text_list=["DFS Status"])
         }
         
         self.active_algorithm_name = None  

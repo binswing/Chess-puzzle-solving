@@ -18,8 +18,10 @@ class MapCreatorScene(Scene):
         self.setup_layout()
         self.images = load_images(self.SQUARE_SIZE)
         self.palette_images = load_images(self.SQUARE_SIZE // 1.5)
-        self.trash_icon = pygame.font.SysFont("segoe ui emoji", 40).render("🗑️", True, (200, 50, 50))
-        self.coord_font = pygame.font.SysFont("arial", 30, bold=True)
+        trash_font_size = int(self.SCREEN_HEIGHT * 0.05)
+        coord_font_size = int(self.SQUARE_SIZE * 0.25)
+        self.trash_icon = pygame.font.SysFont("segoe ui emoji", trash_font_size).render("🗑️", True, (200, 50, 50))
+        self.coord_font = pygame.font.SysFont("arial", coord_font_size, bold=True)
 
         self.mode = "ranger" 
         self.board_data = [[0 for _ in range(8)] for _ in range(8)]
@@ -35,34 +37,43 @@ class MapCreatorScene(Scene):
         self.valid_moves = []
 
         self.setup_ui()
-        self.feedback = FeedbackToast(self.LEFT_PANEL_X, self.BOARD_Y + self.SCREEN_HEIGHT // 4 + 50)
+        toast_h = int(self.SCREEN_HEIGHT * 0.06)
+        toast_w = int(self.SCREEN_WIDTH * 0.2)
+        toast_y = self.clear_btn.rect.bottom + int(self.SCREEN_HEIGHT * 0.05)
+        self.feedback = FeedbackToast(self.LEFT_PANEL_X, toast_y, toast_h, toast_w)
 
     def setup_layout(self):
         screen = pygame.display.get_surface()
         self.SCREEN_WIDTH, self.SCREEN_HEIGHT = screen.get_size()
-        self.MARGIN = 50 
+        self.MARGIN = int(min(self.SCREEN_WIDTH, self.SCREEN_HEIGHT) * 0.05)
         
         self.BOARD_SIZE = min(self.SCREEN_WIDTH, self.SCREEN_HEIGHT) - (self.MARGIN * 2)
         self.SQUARE_SIZE = self.BOARD_SIZE // 8
         self.BOARD_X = (self.SCREEN_WIDTH - self.BOARD_SIZE) // 2
         self.BOARD_Y = (self.SCREEN_HEIGHT - self.BOARD_SIZE) // 2
         
-        self.LEFT_PANEL_X = self.SCREEN_WIDTH // 40
-        self.LEFT_PANEL_WIDTH = self.BOARD_X - 40
-        self.PALETTE_X = self.BOARD_X + self.BOARD_SIZE + 20
+        self.LEFT_PANEL_WIDTH = self.BOARD_X - (self.MARGIN * 2)
+        self.LEFT_PANEL_X = self.MARGIN
+        self.PALETTE_X = self.BOARD_X + self.BOARD_SIZE + self.MARGIN
         self.PALETTE_Y = self.BOARD_Y
 
     def setup_ui(self):
-        btn_width = self.SCREEN_WIDTH // 5
-        start_y = self.BOARD_Y + self.SCREEN_HEIGHT // 20
-        spacing = self.SCREEN_HEIGHT // 16
+        btn_width = int(self.LEFT_PANEL_WIDTH * 0.9)
+        btn_height = int(self.SCREEN_HEIGHT * 0.07)
+        font_size = int(self.SCREEN_HEIGHT * 0.035)
+
+        btn_x = self.LEFT_PANEL_X + (self.LEFT_PANEL_WIDTH - btn_width) // 2
         
-        self.back_btn = ClickableImage(APP_IMG_URL + "return.png", 20, 20, (50, 50), action=lambda: self.manager.switch_scene('menu'), func = lambda image: colorize_image(image, COLOR_DARK))
+        start_y = int(self.SCREEN_HEIGHT * 0.15)
+        spacing = int(self.SCREEN_HEIGHT * 0.02)
         
-        self.mode_btn = ThemedButton(f"Mode: {self.mode.title()}", self.LEFT_PANEL_X, start_y, btn_width, 50, action=self.toggle_mode)
-        self.test_btn = ThemedButton("Testing", self.LEFT_PANEL_X, start_y + spacing, btn_width, 50, action=self.toggle_play_mode)
-        self.save_btn = ThemedButton("Save Map", self.LEFT_PANEL_X, start_y + spacing * 2, btn_width, 50, action=self.save_map)
-        self.clear_btn = ThemedButton("Clear Board", self.LEFT_PANEL_X, start_y + spacing * 3, btn_width, 50, action=self.clear_board)
+        icon_size = int(self.SCREEN_HEIGHT * 0.05)
+        self.back_btn = ClickableImage(APP_IMG_URL + "return.png", self.MARGIN, self.MARGIN, (icon_size, icon_size), action=lambda: self.manager.switch_scene('menu'), func = lambda image: colorize_image(image, COLOR_DARK))
+        
+        self.mode_btn = ThemedButton(f"Mode: {self.mode.title()}", btn_x, start_y, btn_width, btn_height, font_size=font_size, action=self.toggle_mode)
+        self.test_btn = ThemedButton("Testing", btn_x, start_y + btn_height + spacing, btn_width, btn_height, font_size=font_size, action=self.toggle_play_mode)
+        self.save_btn = ThemedButton("Save Map", btn_x, start_y + (btn_height + spacing) * 2, btn_width, btn_height, font_size=font_size, action=self.save_map)
+        self.clear_btn = ThemedButton("Clear Board", btn_x, start_y + (btn_height + spacing) * 3, btn_width, btn_height, font_size=font_size, action=self.clear_board)
 
         self.white_pieces = [1, 2, 3, 4, 5, 6] 
         self.black_pieces = [-1, -2, -3, -4, -5, -6]
@@ -89,13 +100,12 @@ class MapCreatorScene(Scene):
             self.test_btn.text = "Testing"
             self.feedback.show("Edit Mode")
         else:
-            # START PLAYING
             count = sum(1 for r in self.board_data for c in r if c != 0)
             if count < 2:
                 self.feedback.show("Need 2+ pieces!", True)
                 return
 
-            self.backup_board_data = copy.deepcopy(self.board_data) # Save snapshot
+            self.backup_board_data = copy.deepcopy(self.board_data)
             puzzle_data = { "board": self.board_data, "turn": True }
             self.temp_game_env = ChessPuzzle(self.mode, puzzle_data)
             
@@ -229,16 +239,19 @@ class MapCreatorScene(Scene):
                 color = COLOR_LIGHT if (r + c) % 2 == 0 else COLOR_DARK
                 pygame.draw.rect(screen, color, (x, y, self.SQUARE_SIZE, self.SQUARE_SIZE))
                 text_color = COLOR_DARK if (r + c) % 2 == 0 else COLOR_LIGHT
+                
+                offset = int(self.SQUARE_SIZE * 0.1)
+                
                 if c == 0:
                     rank_text = str(8 - r)
                     text_surf = self.coord_font.render(rank_text, True, text_color)
-                    screen.blit(text_surf, (x + 5, y + 5))
+                    screen.blit(text_surf, (x + offset, y + offset))
                 if r == 7:
                     file_text = chr(97 + c)
                     text_surf = self.coord_font.render(file_text, True, text_color)
                     text_width = text_surf.get_width()
                     text_height = text_surf.get_height()
-                    screen.blit(text_surf, (x + self.SQUARE_SIZE - text_width - 5, y + self.SQUARE_SIZE - text_height - 5))
+                    screen.blit(text_surf, (x + self.SQUARE_SIZE - text_width - offset, y + self.SQUARE_SIZE - text_height - offset))
 
                 if self.is_play_mode and self.dragging and (r, c) in self.valid_moves:
                     s = pygame.Surface((self.SQUARE_SIZE, self.SQUARE_SIZE), pygame.SRCALPHA)
@@ -261,6 +274,7 @@ class MapCreatorScene(Scene):
         row_height = self.SQUARE_SIZE
         start_x = self.PALETTE_X
         start_y = self.PALETTE_Y
+        gap = int(self.SQUARE_SIZE * 0.1)
         
         for row in range(6):
             for col in range(3):
@@ -275,8 +289,8 @@ class MapCreatorScene(Scene):
 
                 if code is None: continue
 
-                x = start_x + col * (col_width + 10)
-                y = start_y + row * (row_height + 10)
+                x = start_x + col * (col_width + gap)
+                y = start_y + row * (row_height + gap)
                 
                 if code == self.selected_tool_code:
                     color = (255, 50, 50) if code == 0 else (0, 255, 0)
@@ -302,6 +316,7 @@ class MapCreatorScene(Scene):
         row_height = self.SQUARE_SIZE
         start_x = self.PALETTE_X
         start_y = self.PALETTE_Y
+        gap = int(self.SQUARE_SIZE * 0.1)
         
         for row in range(6):
             for col in range(3):
@@ -316,8 +331,8 @@ class MapCreatorScene(Scene):
 
                 if code is None: continue
 
-                x = start_x + col * (col_width + 10)
-                y = start_y + row * (row_height + 10)
+                x = start_x + col * (col_width + gap)
+                y = start_y + row * (row_height + gap)
                 
                 rect = pygame.Rect(x, y, col_width, row_height)
                 if rect.collidepoint(mx, my):

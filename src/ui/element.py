@@ -23,17 +23,22 @@ class UIElement:
         pass
 
 class ThemedButton(UIElement):
-    def __init__(self, text, x, y, width, height, font_size=30, action=None):
+    def __init__(self, text, x, y, width, height, font_size=None, action=None):
         super().__init__(x, y)
         self.rect = pygame.Rect(x, y, width, height)
         self.text = text
         self.action = action
+        
+        if font_size is None:
+            font_size = int(height * 0.5)
+            
         self.font = pygame.font.Font(None, font_size)
-        self.elevation = 5
+        self.elevation = int(height * 0.1)
         self.dynamic_elevation = self.elevation
         self.y_original = y
         self.pressed = False
         self.hovered = False
+        self.border_radius = int(height * 0.2)
 
     def draw(self, screen):
         mouse_pos = pygame.mouse.get_pos()
@@ -53,11 +58,11 @@ class ThemedButton(UIElement):
             main_color = THEME['primary']
 
         shadow_rect = pygame.Rect(self.rect.x, self.y_original + self.elevation, self.rect.width, self.rect.height)
-        pygame.draw.rect(screen, THEME['shadow'], shadow_rect, border_radius=12)
+        pygame.draw.rect(screen, THEME['shadow'], shadow_rect, border_radius=self.border_radius)
 
         self.top_rect = pygame.Rect(self.rect.x, curr_y, self.rect.width, self.rect.height)
-        pygame.draw.rect(screen, main_color, self.top_rect, border_radius=12)
-        pygame.draw.rect(screen, THEME['text'], self.top_rect, 2, border_radius=12)
+        pygame.draw.rect(screen, main_color, self.top_rect, border_radius=self.border_radius)
+        pygame.draw.rect(screen, THEME['text'], self.top_rect, 2, border_radius=self.border_radius)
 
         text_surf = self.font.render(self.text, True, THEME['text'])
         text_rect = text_surf.get_rect(center=self.top_rect.center)
@@ -79,13 +84,18 @@ class ThemedButton(UIElement):
         return False
 
 class RuleBox(UIElement):
-    def __init__(self, x, y, width, height, text_list):
+    def __init__(self, x, y, width, height, text_list, font_size=None):
         super().__init__(x, y)
         self.rect = pygame.Rect(x, y, width, height)
         self.text_list = text_list
-        self.font = pygame.font.Font(None, 24)
+        
+        if font_size is None:
+            font_size = int(width * 0.08)
+            
+        self.font = pygame.font.Font(None, font_size)
         self.bg_color = THEME['box_bg']
         self.text_color = (240, 240, 240)
+        self.line_height = int(font_size * 1.1)
         self.rendered_lines = self.wrap_text(self.text_list)
 
     def wrap_text(self, lines):
@@ -110,11 +120,13 @@ class RuleBox(UIElement):
         screen.blit(s, (self.rect.x, self.rect.y))
         pygame.draw.rect(screen, THEME['primary'], self.rect, 3)
 
-        y_offset = 15
+        y_offset = int(self.rect.height * 0.1)
+        x_offset = int(self.rect.width * 0.05)
+        
         for line in self.rendered_lines:
             text_surf = self.font.render(line, True, self.text_color)
-            screen.blit(text_surf, (self.rect.x + 10, self.rect.y + y_offset))
-            y_offset += 25
+            screen.blit(text_surf, (self.rect.x + x_offset, self.rect.y + y_offset))
+            y_offset += self.line_height
 
 class Image(UIElement):
     def __init__(self, image_url, x, y, size = None) -> None:
@@ -126,6 +138,8 @@ class Image(UIElement):
         except pygame.error as e:
             print(f"Error loading image: {e}")
             sys.exit()
+        
+        self.rect = self.logo_image.get_rect(topleft=(x,y))
 
     def draw(self, screen):
         screen.blit(self.logo_image, (self.rect.x, self.rect.y))
@@ -142,7 +156,6 @@ class ClickableImage(UIElement):
             if size is not None:
                 self.surface = pygame.transform.smoothscale(self.surface, size)
             
-            # Apply image processing function (e.g., colorize) if provided
             if func:
                 self.surface = func(self.surface)
 
@@ -150,7 +163,7 @@ class ClickableImage(UIElement):
             height = self.surface.get_height()
             self.hover_surface = pygame.transform.smoothscale(
                 self.surface, 
-                (int(width * 1.2), int(height * 1.2))
+                (int(width * 1.1), int(height * 1.1))
             )
                 
         except pygame.error as e:
@@ -178,17 +191,21 @@ class ClickableImage(UIElement):
         return False
     
 class NumberSelector(UIElement):
-    def __init__(self, x, y, min_val, max_val, initial_val, left_img_path, right_img_path, left_action=None, right_action=None, image_func = None):
+    def __init__(self, x, y, height, min_val, max_val, initial_val, left_img_path, right_img_path, left_action=None, right_action=None, image_func = None):
         super().__init__(x, y)
         self.value = initial_val
         self.min_val = min_val
         self.max_val = max_val
         self.left_action = left_action
         self.right_action = right_action
-        self.font = pygame.font.Font(None, 40)
+        
+        self.size = height
+        font_size = int(height * 0.8)
+        self.font = pygame.font.Font(None, font_size)
         self.text_color = (255, 255, 255)
-        self.spacing = 20 
-        self.text_area_width = 60
+        
+        self.spacing = int(height * 0.5)
+        self.text_area_width = int(height * 1.5)
 
         def decrease():
             if self.value > self.min_val:
@@ -197,7 +214,7 @@ class NumberSelector(UIElement):
                 if self.left_action:
                     self.left_action(self.value)
 
-        self.btn_left = ClickableImage(left_img_path, x, y, size=(40, 40), action=decrease, func=image_func)
+        self.btn_left = ClickableImage(left_img_path, x, y, size=(int(height), int(height)), action=decrease, func=image_func)
 
         def increase():
             if self.value < self.max_val:
@@ -206,8 +223,8 @@ class NumberSelector(UIElement):
                 if self.right_action:
                     self.right_action(self.value)
 
-        btn_right_x = x + 40 + self.spacing + self.text_area_width + self.spacing
-        self.btn_right = ClickableImage(right_img_path, btn_right_x, y, size=(40, 40), action=increase, func=image_func)
+        btn_right_x = x + int(height) + self.spacing + self.text_area_width + self.spacing
+        self.btn_right = ClickableImage(right_img_path, btn_right_x, y, size=(int(height), int(height)), action=increase, func=image_func)
 
         self.text_surf = None
         self.text_rect = None
@@ -216,9 +233,9 @@ class NumberSelector(UIElement):
     def update_text(self):
         text_str = str(self.value)
         self.text_surf = self.font.render(text_str, True, self.text_color)
-        start_x = self.btn_left.rect.x + 40 + self.spacing
+        start_x = self.btn_left.rect.x + self.size + self.spacing
         center_x = start_x + (self.text_area_width // 2)
-        center_y = self.btn_left.rect.y + 20 
+        center_y = self.btn_left.rect.y + self.size // 2 
         self.text_rect = self.text_surf.get_rect(center=(center_x, center_y))
 
     def handle_event(self, event):
@@ -249,10 +266,10 @@ class StatsPanel(UIElement):
         self.path = None
         
         self.lines_to_draw = []
-        self.line_height = font_size + 5
-        self.side_padding = 15
-        self.top_margin = 20    
-        self.bottom_padding = 10 
+        self.line_height = int(font_size * 1.2)
+        self.side_padding = int(width * 0.05)
+        self.top_margin = int(font_size * 0.8)    
+        self.bottom_padding = int(font_size * 0.5)
         
         self.recalculate_layout()
 
@@ -281,7 +298,9 @@ class StatsPanel(UIElement):
                     moves_str.append(f"{start}-{end}")
                 
                 full_path_str = " -> ".join(moves_str)
-                chars_per_line = int(self.rect.width / (self.font_size * 0.34)) 
+                char_width_approx = self.font_size * 0.4
+                chars_per_line = max(10, int(self.rect.width / char_width_approx)) 
+                
                 for i in range(0, len(full_path_str), chars_per_line):
                     self.lines_to_draw.append(full_path_str[i : i + chars_per_line])
         num_lines = len(self.lines_to_draw)
@@ -302,15 +321,18 @@ class StatsPanel(UIElement):
             y_offset += self.line_height
 
 class FeedbackToast(UIElement):
-    def __init__(self, x, y, min_width=200):
+    def __init__(self, x, y, height_ref, min_width_ref):
         self.x = x
         self.y = y
-        self.min_width = min_width
+        self.min_width = min_width_ref
+        self.height = int(height_ref)
         self.text = ""
         self.is_visible = False
         self.timer = 0
         self.duration = 3000
-        self.font = pygame.font.SysFont("arial", 24)
+        
+        font_size = int(self.height * 0.5)
+        self.font = pygame.font.SysFont("arial", font_size)
         self.color = (0, 255, 0)
         self.bg_color = (30, 30, 30, 220)
         self.border_color = (100, 100, 100)
@@ -331,10 +353,10 @@ class FeedbackToast(UIElement):
         if not self.is_visible:
             return
         text_surf = self.font.render(self.text, True, self.color)
-        width = max(self.min_width, text_surf.get_width() + 40)
-        height = 50
-        rect = pygame.Rect(self.x, self.y, width, height)
-        s = pygame.Surface((width, height), pygame.SRCALPHA)
+        width = max(self.min_width, text_surf.get_width() + int(self.min_width * 0.2))
+        
+        rect = pygame.Rect(self.x, self.y, width, self.height)
+        s = pygame.Surface((width, self.height), pygame.SRCALPHA)
         s.fill(self.bg_color)
         screen.blit(s, (self.x, self.y)) 
         pygame.draw.rect(screen, self.border_color, rect, 2)
@@ -342,10 +364,14 @@ class FeedbackToast(UIElement):
         screen.blit(text_surf, text_rect)
 
 class LabelBox(UIElement):
-    def __init__(self, text, x, y, width, height, font_size=30):
+    def __init__(self, text, x, y, width, height, font_size=None):
         super().__init__(x, y)
         self.rect = pygame.Rect(x, y, width, height)
         self.text = text
+        
+        if font_size is None:
+            font_size = int(height * 0.6)
+            
         self.font = pygame.font.SysFont("arial", font_size, bold=True)
         self.bg_color = COLOR_LIGHT
         self.border_color = COLOR_DARK
@@ -360,22 +386,27 @@ class LabelBox(UIElement):
         screen.blit(text_surf, text_rect)
 
 class Slider(UIElement):
-    def __init__(self, x, y, width, min_val, max_val, initial_val, action=None):
+    def __init__(self, x, y, width, height, limit : tuple[int, int], initial_val, action=None):
         super().__init__(x, y)
-        self.rect = pygame.Rect(x, y, width, 10)
-        self.min_val = min_val
-        self.max_val = max_val
+        self.rect = pygame.Rect(x, y, width, int(height * 0.2))
+        self.rect.centery = y
+        self.min_val, self.max_val = limit
         self.value = initial_val
         self.action = action
         self.dragging = False
+        
+        self.knob_width = int(height * 0.4)
+        self.knob_height = int(height * 0.6)
+        
         pct = (self.value - self.min_val) / (self.max_val - self.min_val)
         knob_x = self.rect.x + (self.rect.width * pct)
-        self.knob_rect = pygame.Rect(knob_x - 10, y - 10, 20, 30)
+        self.knob_rect = pygame.Rect(0, 0, self.knob_width, self.knob_height)
+        self.knob_rect.center = (knob_x, y)
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                if self.knob_rect.collidepoint(event.pos) or self.rect.inflate(0, 20).collidepoint(event.pos):
+                if self.knob_rect.collidepoint(event.pos) or self.rect.inflate(0, self.knob_height).collidepoint(event.pos):
                     self.dragging = True
                     self.update_from_mouse(event.pos[0])
                     return True
@@ -401,10 +432,10 @@ class Slider(UIElement):
             self.action(self.value)
 
     def draw(self, screen):
-        pygame.draw.rect(screen, (100, 100, 100), self.rect, border_radius=5)
+        pygame.draw.rect(screen, (100, 100, 100), self.rect, border_radius=int(self.rect.height//2))
         
-        pygame.draw.rect(screen, THEME['primary'], self.knob_rect, border_radius=5)
-        pygame.draw.rect(screen, THEME['text'], self.knob_rect, 2, border_radius=5)
+        pygame.draw.rect(screen, THEME['primary'], self.knob_rect, border_radius=int(self.knob_width//4))
+        pygame.draw.rect(screen, THEME['text'], self.knob_rect, 2, border_radius=int(self.knob_width//4))
 
 class ToggleSwitch(UIElement):
     def __init__(self, x, y, width, height, initial_state, on_toggle=None):
@@ -425,7 +456,7 @@ class ToggleSwitch(UIElement):
         pygame.draw.rect(screen, bg_color, self.rect, border_radius=self.rect.height//2)
         pygame.draw.rect(screen, (50, 50, 50), self.rect, 2, border_radius=self.rect.height//2)
         
-        padding = 4
+        padding = int(self.rect.height * 0.1)
         knob_size = self.rect.height - (padding * 2)
         min_x = self.rect.x + padding
         max_x = self.rect.x + self.rect.width - padding - knob_size

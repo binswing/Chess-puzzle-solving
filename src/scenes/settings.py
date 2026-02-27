@@ -9,8 +9,11 @@ class SettingsScene(Scene):
         screen = pygame.display.get_surface()
         self.SCREEN_WIDTH, self.SCREEN_HEIGHT = screen.get_size()
         
-        self.title_font = pygame.font.SysFont("arial", 60, bold=True)
-        self.text_font = pygame.font.SysFont("arial", 28)
+        title_font_size = int(self.SCREEN_HEIGHT * 0.08)
+        text_font_size = int(self.SCREEN_HEIGHT * 0.035)
+        
+        self.title_font = pygame.font.SysFont("arial", title_font_size, bold=True)
+        self.text_font = pygame.font.SysFont("arial", text_font_size)
         
         self.title_surf = self.title_font.render("Settings", True, COLOR_LIGHT)
         self.title_rect = self.title_surf.get_rect(center=(self.SCREEN_WIDTH // 2, self.SCREEN_HEIGHT // 10))
@@ -25,9 +28,9 @@ class SettingsScene(Scene):
         label_w = self.SCREEN_WIDTH // 5
         label_h = self.SCREEN_HEIGHT // 15
         slider_w = self.SCREEN_WIDTH // 6
-        font_size = int(self.SCREEN_HEIGHT * 0.035)
+        slider_h = int(label_h * 0.8)
 
-        self.anim_label = LabelBox("Search Animation", label_col_x, start_y, label_w, label_h, font_size=font_size)
+        self.anim_label = LabelBox("Search Animation", label_col_x, start_y, label_w, label_h, font_size=text_font_size)
         
         toggle_w = int(slider_w * 0.4)
         toggle_h = int(label_h * 0.8)
@@ -36,21 +39,21 @@ class SettingsScene(Scene):
         self.anim_toggle = ToggleSwitch(control_col_x, start_y + toggle_y_offset, toggle_w, toggle_h, settings.SEARCH_ANIMATION, lambda val: self.set_attibute("SEARCH_ANIMATION", val))
 
         self.play_speed_y = start_y + gap
-        self.play_speed_label = LabelBox("Play Speed", label_col_x, self.play_speed_y, label_w, label_h, font_size=font_size)
-        self.play_speed_slider = Slider(control_col_x, self.play_speed_y + label_h//2, slider_w, 50, 1000, settings.PLAY_ANIMATION_DURATION, lambda val: self.set_attibute("PLAY_ANIMATION_DURATION", val))
+        self.play_speed_label = LabelBox("Play Speed", label_col_x, self.play_speed_y, label_w, label_h, font_size=text_font_size)
+        self.play_speed_slider = Slider(control_col_x, self.play_speed_y + label_h//2, slider_w, slider_h, PLAY_SPEED_LIMIT, settings.PLAY_ANIMATION_DURATION, lambda val: self.set_attibute("PLAY_ANIMATION_DURATION", val))
         
         self.search_speed_y = self.play_speed_y + gap
-        self.search_speed_label = LabelBox("Search Speed", label_col_x, self.search_speed_y, label_w, label_h, font_size=font_size)
-        self.search_speed_slider = Slider(control_col_x, self.search_speed_y + label_h//2, slider_w, 0, 100, settings.SEARCH_ANIMATION_DURATION, lambda val: self.set_attibute("SEARCH_ANIMATION_DURATION", val))
+        self.search_speed_label = LabelBox("Search Speed", label_col_x, self.search_speed_y, label_w, label_h, font_size=text_font_size)
+        self.search_speed_slider = Slider(control_col_x, self.search_speed_y + label_h//2, slider_w, slider_h, SEARCH_SPEED_LIMIT, settings.SEARCH_ANIMATION_DURATION, lambda val: self.set_attibute("SEARCH_ANIMATION_DURATION", val))
 
         self.fps_y = self.search_speed_y + gap
-        self.fps_label = LabelBox("Target FPS", label_col_x, self.fps_y, label_w, label_h, font_size=font_size)
-        self.fps_slider = Slider(control_col_x, self.fps_y + label_h//2, slider_w, 30, 240, settings.FPS, lambda val: self.set_attibute("FPS", val))
+        self.fps_label = LabelBox("Target FPS", label_col_x, self.fps_y, label_w, label_h, font_size=text_font_size)
+        self.fps_slider = Slider(control_col_x, self.fps_y + label_h//2, slider_w, slider_h, FPS_LIMIT, settings.FPS, lambda val: self.set_attibute("FPS", val))
 
         btn_w = self.SCREEN_WIDTH // 6
         btn_h = self.SCREEN_HEIGHT // 12
         btn_y = self.SCREEN_HEIGHT - (self.SCREEN_HEIGHT // 6)
-        self.back_btn = ThemedButton("Back to Menu", center_x - btn_w//2, btn_y, btn_w, btn_h, font_size = font_size, action = lambda: self.manager.switch_scene('menu'))
+        self.back_btn = ThemedButton("Back to Menu", center_x - btn_w//2, btn_y, btn_w, btn_h, font_size = text_font_size, action = lambda: self.manager.switch_scene('menu'))
 
     def set_attibute(self, attribute_name, value):
         setattr(settings, attribute_name, value)

@@ -114,7 +114,8 @@ class PuzzleLogic:
 class PuzzleScene(Scene):
     def __init__(self, manager, mode, initial_map=None):
         super().__init__(manager)
-        self.update_screen()
+        self.update_screen() 
+        
         self.mode = mode
         self.MIN_NUM_PIECES, self.MAX_NUM_PIECES = get_puzzle_limits(mode)
         
@@ -136,79 +137,106 @@ class PuzzleScene(Scene):
         self.is_playing_solution = False
         self.playback_queue = []
         self.game_won = False
-        self.win_font = pygame.font.Font(None, 100)
-        self.coord_font = pygame.font.SysFont("arial", 30, bold=True)
-        self.coord_font.bold = True
-        self.algorithm_handler = AlgorithmHandler(self)
-
+        
+        win_font_size = int(self.SCREEN_WIDTH * 0.1)
+        self.win_font = pygame.font.Font(None, win_font_size)
+        
+        coord_font_size = int(self.SQUARE_SIZE * 0.25)
+        self.coord_font = pygame.font.SysFont("arial", coord_font_size, bold=True)
+        
         with open(DATA_URL + 'puzzle_info.json') as json_data:
             rules = json.load(json_data)[f"chess_{self.mode}"]["rules"]
 
-        self.return_image = ClickableImage(APP_IMG_URL + "return.png", self.SCREEN_WIDTH // 32, self.MARGIN, (self.SCREEN_WIDTH // 32, self.SCREEN_WIDTH // 32), action = lambda: self.manager.switch_scene('menu'), func = lambda image: colorize_image(image, COLOR_DARK))
+        rule_x = self.SCREEN_WIDTH - self.RIGHT_PANEL_WIDTH - self.MARGIN
+        rule_y = int(self.MARGIN * 0.7)
+        rule_w = self.RIGHT_PANEL_WIDTH
+        rule_h = int(self.SCREEN_HEIGHT * 0.15)  
+        rule_font_size = int(self.SCREEN_HEIGHT * 0.025) 
+        self.rule_box = RuleBox(rule_x, rule_y, rule_w, rule_h, rules, font_size=rule_font_size)
+        self.algorithm_handler = AlgorithmHandler(self, start_y=rule_y + rule_h + 10)
 
-        btn_x = self.LEFT_MARGIN // 2 - self.SCREEN_WIDTH // 10
-        btn_width = self.SCREEN_WIDTH // 5
-        btn_height = 60
-        start_y = self.MARGIN + self.SCREEN_HEIGHT // 5
-        spacing = 20
-    
-        selector_x = self.LEFT_MARGIN // 2 - self.SCREEN_WIDTH // 20
-        selector_y = start_y
+        icon_size = int(self.SCREEN_HEIGHT * 0.05)
+        self.return_image = ClickableImage(APP_IMG_URL + "return.png", self.MARGIN, self.MARGIN, (icon_size, icon_size), action = lambda: self.manager.switch_scene('menu'), func = lambda image: colorize_image(image, COLOR_DARK))
+
+        left_center_x = self.MARGIN + (self.LEFT_PANEL_WIDTH // 2)
+        start_y = int(self.SCREEN_HEIGHT * 0.15)
         
-        self.pieces_label_font = pygame.font.SysFont("tahoma", 45, bold=True)
+        label_font_size = int(self.SCREEN_HEIGHT * 0.035)
+        self.pieces_label_font = pygame.font.SysFont("tahoma", label_font_size, bold=True)
         self.pieces_label_surf = self.pieces_label_font.render("Number of pieces", True, COLOR_LIGHT)
-        self.pieces_label_pos = (selector_x - 100, selector_y - 80)
+        
+        selector_h = int(self.SCREEN_HEIGHT * 0.06)
+        selector_real_width = selector_h * 4.5 
+        selector_x = int(left_center_x - (selector_real_width / 2))
+        
+        label_y = start_y
+        selector_y = label_y + label_font_size + int(self.SCREEN_HEIGHT * 0.05) # Increased gap
 
         self.num_of_pieces_selector = NumberSelector(
             selector_x, selector_y, 
+            selector_h,
             self.MIN_NUM_PIECES, self.MAX_NUM_PIECES, self.logic.get_num_of_pieces(), 
             APP_IMG_URL + "left-arrow.png", APP_IMG_URL + "right-arrow.png", 
             self.handle_num_of_pieces, self.handle_num_of_pieces,
             image_func=lambda image: colorize_image(image, COLOR_DARK)
         )
         
-        self.change_map_button = ThemedButton("Change Map", btn_x, start_y + 120, btn_width, btn_height, font_size=40, action=self.handle_change_map)
-        self.reset_button = ThemedButton("Start over", btn_x, start_y + 120 + btn_height + spacing, btn_width, btn_height, font_size=40, action=self.handle_reset)
+        btn_w = int(self.LEFT_PANEL_WIDTH * 0.9)
+        btn_h = int(self.SCREEN_HEIGHT * 0.07)
+        btn_x = self.MARGIN + (self.LEFT_PANEL_WIDTH - btn_w) // 2
+        spacing = int(self.SCREEN_HEIGHT * 0.02)
+        
+        btn_group_y = selector_y + selector_h + int(self.SCREEN_HEIGHT * 0.05)
+        self.change_map_button = ThemedButton("Change Map", btn_x, btn_group_y, btn_w, btn_h, action=self.handle_change_map)
+        self.reset_button = ThemedButton("Start over", btn_x, btn_group_y + btn_h + spacing, btn_w, btn_h, action=self.handle_reset)
 
-        algo_start_y = start_y + 120 + (btn_height + spacing) * 2 + 40
-        row_height = 80
-        icon_size = (60, 60)
+        algo_start_y = btn_group_y + (btn_h + spacing) * 2 + int(self.SCREEN_HEIGHT * 0.05)
+        algo_row_h = int(self.SCREEN_HEIGHT * 0.08)
+
+        label_w = int(btn_w * 0.7)
+        label_h = int(algo_row_h * 0.8)
+        icon_dim = int(algo_row_h * 0.6)
+        icon_box_w = int(btn_w * 0.2)
+
+        algo_label_font_size = int(self.SCREEN_HEIGHT * 0.025)
+        btn_y_offset = (label_h - icon_dim) // 2
+        search_x = btn_x + label_w + int(btn_w * 0.02)
+        play_x = search_x + icon_box_w
         
-        label_w = self.SCREEN_WIDTH // 8
-        total_w = label_w + 20 + icon_size[0] + 20 + icon_size[0]
-        
-        self.label_x = btn_x + (btn_width - total_w) // 2 + 8
-        self.search_x = self.label_x + label_w + 11
-        self.play_x = self.search_x + icon_size[0] + 11
-        
+        # A*
         self.astar_y = algo_start_y
-        self.astar_label = LabelBox("A* algorithm", self.label_x, self.astar_y + 10, label_w, self.SCREEN_HEIGHT // 25, font_size=28)
-        self.astar_search_btn = ClickableImage(APP_IMG_URL + "search.png", self.search_x, self.astar_y, icon_size, action=lambda: self.handle_search("A*"), func = lambda image: colorize_image(image, COLOR_DARK))
-        self.astar_play_btn = ClickableImage(APP_IMG_URL + "play.png", self.play_x, self.astar_y, icon_size, action=lambda: self.start_solution_playback("A*"), func = lambda image: colorize_image(image, COLOR_DARK))
+        self.astar_label = LabelBox("A* Algorithm", btn_x, self.astar_y, label_w, label_h, font_size=algo_label_font_size)
+        self.astar_search_btn = ClickableImage(APP_IMG_URL + "search.png", search_x, self.astar_y + btn_y_offset, (icon_dim, icon_dim), action=lambda: self.handle_search("A*"), func = lambda image: colorize_image(image, COLOR_DARK))
+        self.astar_play_btn = ClickableImage(APP_IMG_URL + "play.png", play_x, self.astar_y + btn_y_offset, (icon_dim, icon_dim), action=lambda: self.start_solution_playback("A*"), func = lambda image: colorize_image(image, COLOR_DARK))
 
-        self.bfs_y = algo_start_y + row_height
-        self.bfs_label = LabelBox("BFS algorithm", self.label_x, self.bfs_y + 10, label_w, 40, font_size=28)
-        self.bfs_search_btn = ClickableImage(APP_IMG_URL + "search.png", self.search_x, self.bfs_y, icon_size, action=lambda: self.handle_search("BFS"), func = lambda image: colorize_image(image, COLOR_DARK))
-        self.bfs_play_btn = ClickableImage(APP_IMG_URL + "play.png", self.play_x, self.bfs_y, icon_size, action=lambda: self.start_solution_playback("BFS"), func = lambda image: colorize_image(image, COLOR_DARK))
+        # BFS
+        self.bfs_y = algo_start_y + algo_row_h
+        self.bfs_label = LabelBox("BFS Algorithm", btn_x, self.bfs_y, label_w, label_h, font_size=algo_label_font_size)
+        self.bfs_search_btn = ClickableImage(APP_IMG_URL + "search.png", search_x, self.bfs_y + btn_y_offset, (icon_dim, icon_dim), action=lambda: self.handle_search("BFS"), func = lambda image: colorize_image(image, COLOR_DARK))
+        self.bfs_play_btn = ClickableImage(APP_IMG_URL + "play.png", play_x, self.bfs_y + btn_y_offset, (icon_dim, icon_dim), action=lambda: self.start_solution_playback("BFS"), func = lambda image: colorize_image(image, COLOR_DARK))
 
-        self.dfs_y = algo_start_y + row_height * 2
-        self.dfs_label = LabelBox("DFS algorithm", self.label_x, self.dfs_y + 10, label_w, 40, font_size=28)
-        self.dfs_search_btn = ClickableImage(APP_IMG_URL + "search.png", self.search_x, self.dfs_y, icon_size, action=lambda: self.handle_search("DFS"), func = lambda image: colorize_image(image, COLOR_DARK))
-        self.dfs_play_btn = ClickableImage(APP_IMG_URL + "play.png", self.play_x, self.dfs_y, icon_size, action=lambda: self.start_solution_playback("DFS"), func = lambda image: colorize_image(image, COLOR_DARK))
+        # DFS
+        self.dfs_y = algo_start_y + algo_row_h * 2
+        self.dfs_label = LabelBox("DFS Algorithm", btn_x, self.dfs_y, label_w, label_h, font_size=algo_label_font_size)
+        self.dfs_search_btn = ClickableImage(APP_IMG_URL + "search.png", search_x, self.dfs_y + btn_y_offset, (icon_dim, icon_dim), action=lambda: self.handle_search("DFS"), func = lambda image: colorize_image(image, COLOR_DARK))
+        self.dfs_play_btn = ClickableImage(APP_IMG_URL + "play.png", play_x, self.dfs_y + btn_y_offset, (icon_dim, icon_dim), action=lambda: self.start_solution_playback("DFS"), func = lambda image: colorize_image(image, COLOR_DARK))
 
-        rule_box_x = self.SCREEN_WIDTH - self.SCREEN_WIDTH // 40 - self.SCREEN_WIDTH // 5
-        self.rule_box = RuleBox(rule_box_x, self.MARGIN , self.SCREEN_WIDTH // 5, self.SCREEN_HEIGHT // 8, rules)
+        text_w = self.pieces_label_surf.get_width()
+        self.pieces_label_pos = (left_center_x - text_w // 2, label_y)
 
     def update_screen(self):
         screen = pygame.display.get_surface()
         self.SCREEN_WIDTH, self.SCREEN_HEIGHT = screen.get_size()
-        self.MARGIN = 50 
+        self.MARGIN = int(min(self.SCREEN_WIDTH, self.SCREEN_HEIGHT) * 0.03)
+        
         self.BOARD_SIZE = min(self.SCREEN_WIDTH, self.SCREEN_HEIGHT) - (self.MARGIN * 2)
-        self.LEFT_MARGIN = (self.SCREEN_WIDTH - self.BOARD_SIZE) // 2
         self.SQUARE_SIZE = self.BOARD_SIZE // 8
         self.BOARD_X = (self.SCREEN_WIDTH - self.BOARD_SIZE) // 2
         self.BOARD_Y = (self.SCREEN_HEIGHT - self.BOARD_SIZE) // 2
         
+        self.LEFT_PANEL_WIDTH = self.BOARD_X - (self.MARGIN * 2)
+        self.RIGHT_PANEL_WIDTH = self.LEFT_PANEL_WIDTH 
+
     def update(self, event_list):
         self.update_screen()
         self.mouse_pos = pygame.mouse.get_pos()
@@ -393,16 +421,19 @@ class PuzzleScene(Scene):
                 color = COLOR_LIGHT if (r + c) % 2 == 0 else COLOR_DARK
                 pygame.draw.rect(screen, color, (x_pos, y_pos, self.SQUARE_SIZE, self.SQUARE_SIZE))
                 text_color = COLOR_DARK if is_light_square else COLOR_LIGHT
+                
+                offset = int(self.SQUARE_SIZE * 0.1)
+                
                 if c == 0:
                     rank_text = str(8 - r)
                     text_surf = self.coord_font.render(rank_text, True, text_color)
-                    screen.blit(text_surf, (x_pos + self.SQUARE_SIZE // 12, y_pos + self.SQUARE_SIZE // 24))
+                    screen.blit(text_surf, (x_pos + offset, y_pos + offset // 2))
                 if r == 7:
                     file_text = chr(97 + c)
                     text_surf = self.coord_font.render(file_text, True, text_color)
                     text_width = text_surf.get_width()
                     text_height = text_surf.get_height()
-                    screen.blit(text_surf, (x_pos + self.SQUARE_SIZE - text_width - self.SQUARE_SIZE // 12, y_pos + self.SQUARE_SIZE - text_height - self.SQUARE_SIZE // 24))
+                    screen.blit(text_surf, (x_pos + self.SQUARE_SIZE - text_width - offset, y_pos + self.SQUARE_SIZE - text_height - offset // 2))
 
         if self.dragging:
             hover_row, hover_col = self.get_square_under_mouse(self.mouse_pos)
