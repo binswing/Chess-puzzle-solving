@@ -1,16 +1,8 @@
 import numpy as np
 from src.entities.figure import *
 
-class ChessRangerBoard(Board): # Only white pieces
-    def import_board(self, board: list[list[int]]) -> None:
-        self.board = []
-        for row in board:
-            self.board.append([])
-            for piece in row:
-                if piece == 0:
-                    self.board[-1].append(None)
-                else:
-                    self.board[-1].append(int_to_piece[abs(piece)](True))
+class ChessRangerBoard(Board): 
+    pass
     
 class ChessMeleeBoard(Board):
     def __init__(self, board: list[list[int]] = [[0 for _ in range(8)] for _ in range(8)]) -> None:
@@ -61,6 +53,95 @@ class ChessMeleeBoard(Board):
                     
         return moves
 
+
+class ChessSoloBoard(Board):
+    def __init__(self, board: list[list[int]] = [[0 for _ in range(8)] for _ in range(8)]) -> None:
+        super().__init__(board)
+        
+        self.move_count: dict[tuple[int, int], int] = {}
+        
+        self._initialize_move_count()
+
+    def _initialize_move_count(self) -> None:
+        self.move_count = {}
+        for r in range(8):
+            for c in range(8):
+                if self.board[r][c] is not None:
+                    self.move_count[(r, c)] = 0
+
+    def import_board(self, board: list[list[int]]) -> None:
+        super().import_board(board)
+        self._initialize_move_count()
+    def is_valid_move(self, from_pos: tuple[int, int], to_pos: tuple[int, int]) -> bool:
+        r1, c1 = from_pos
+        r2, c2 = to_pos
+        
+     
+        if not (0 <= r1 < 8 and 0 <= c1 < 8 and 0 <= r2 < 8 and 0 <= c2 < 8):
+            return False
+        
+        piece = self.board[r1][c1]
+        target = self.board[r2][c2]
+        
+    
+        if piece is None or target is None:
+            return False
+   
+        if piece_to_int[type(target)] == 6: 
+            return False  
+        
+ 
+        if self.move_count.get(from_pos, 0) >= 2:
+            return False
+        
+        move_delta = (r2 - r1, c2 - c1)
+
+        if not piece.is_legal_move(move_delta):
+            return False
+
+        if not self.is_path_clear(from_pos, to_pos):
+            return False
+        
+        return True
+    def get_all_valid_moves(self, specific_pos: tuple[int, int] | None = None) -> list[tuple[int, int, int, int]]:
+        moves = []
+        
+        if specific_pos:
+            r, c = specific_pos
+            if self.board[r][c] is not None:
+                for tr in range(8):
+                    for tc in range(8):
+                        if self.is_valid_move((r, c), (tr, tc)):
+                            moves.append((r, c, tr, tc))
+            return moves
+        
+        for r in range(8):
+            for c in range(8):
+                if self.board[r][c] is not None:
+                    for tr in range(8):
+                        for tc in range(8):
+                            if self.is_valid_move((r, c), (tr, tc)):
+                                moves.append((r, c, tr, tc))
+        return moves
+    
+    def move_piece(self, from_pos: tuple[int, int], to_pos: tuple[int, int]) -> bool:
+        if not self.is_valid_move(from_pos, to_pos):
+            return False
+        
+        r1, c1 = from_pos
+        r2, c2 = to_pos
+        self.move_count[from_pos] = self.move_count.get(from_pos, 0) + 1
+        eaten_pos = to_pos
+        self.board[r2][c2] = self.board[r1][c1]
+        self.board[r1][c1] = None
+        self.move_count[(r2, c2)] = self.move_count.pop(from_pos)
+
+        if eaten_pos in self.move_count:
+            del self.move_count[eaten_pos]
+        
+        return True
+
+
 MODE={
     "ranger": {
         "class":ChessRangerBoard,
@@ -87,20 +168,35 @@ MODE={
             [0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0]
         ]
+    },
+    "solo":{
+        "class":ChessSoloBoard,
+        "default_board": [
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 4, 0, 0, 0, 0, 0],
+            [0, 0, 2, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 6, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0]
+        ]
     }
-}
-
+} 
+ 
 class ChessPuzzle:
     def __init__(self, mode, board_layout: list[list[int]] | dict | None = None):
+        super().__init__()
         if mode not in MODE:
             mode = "ranger"
 
         layout = None
         turn = None
-        
+        count = None
         if isinstance(board_layout, dict):
             layout = board_layout["board"]
             turn = board_layout.get("turn")
+            count= board_layout.get("move_count")
             self.initial_board_layout = board_layout
         else:
             if board_layout is None:
@@ -112,7 +208,8 @@ class ChessPuzzle:
 
         if turn is not None and hasattr(self.board, "waiting_turn"):
             self.board.waiting_turn = turn
-
+        if count is not None and hasattr(self.board, "move_count"):
+            self.board.move_count = count
     def step(self, action: tuple[int, int, int, int]):
         success = self.board.move_piece((action[0], action[1]), (action[2], action[3]))
         
@@ -124,12 +221,15 @@ class ChessPuzzle:
         else:
             reward = 1
             piece_count = self.board.count_pieces()
+            print(f"DEBUG: piece_count = {piece_count}")
             if piece_count == 1:
+                
                 reward = 100
                 done = True
                 info['msg'] = "Solved!"
             elif piece_count > 1:
                 all_moves = self.board.get_all_valid_moves()
+                print(all_moves)
                 if len(all_moves) == 0:
                     reward = -50
                     done = True
@@ -142,18 +242,20 @@ class ChessPuzzle:
             
         layout = board_layout
         turn = None
-        
+        count = None
+
         if isinstance(board_layout, dict):
             layout = board_layout["board"]
             turn = board_layout.get("turn")
-        
+            count = board_layout.get("move_count")
         self.board.import_board(layout)
         
         if turn is not None and hasattr(self.board, "waiting_turn"):
             self.board.waiting_turn = turn
         elif hasattr(self.board, "waiting_turn"):
             self.board.waiting_turn = True
-    
+        if count is not None and hasattr(self.board, "move_count"):
+            self.board.move_count = count
     def get_observation(self):
         return np.array(self.board.export_board(), dtype=np.int8)
     
@@ -163,14 +265,16 @@ class ChessPuzzle:
     def get_state(self):
         return {
             "board": self.board.export_board(),
-            "turn": getattr(self.board, "waiting_turn", None)
+            "turn": getattr(self.board, "waiting_turn", None),
+            "move_count": getattr(self.board, "move_count", None)
         }
 
     def set_state(self, state):
         self.board.import_board(state["board"])
         if state["turn"] is not None and hasattr(self.board, "waiting_turn"):
             self.board.waiting_turn = state["turn"]
-
+        if state["move_count"] is not None and hasattr(self.board, "move_count"):
+            self.board.move_count = state["move_count"]
     def calculate_heuristic(self, state=None) -> int:
         # pieces_count = self.board.count_pieces()
         # if pieces_count <= 1: return 0

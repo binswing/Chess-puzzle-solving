@@ -13,5 +13,13 @@
             "You can perform only capture moves.", 
             "The goal is to end up with one single piece on the board."
         ]
+    },
+    "chess_solo":{
+        "rules":[
+            "Pieces move as standard chess pieces.", 
+            "You can perform only capture moves.", 
+            "You are NOT allowed to capture the king.", 
+            "The goal is to end up with one single piece(the King) on the board."
+        ]
     }
 }

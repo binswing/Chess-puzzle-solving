@@ -45,14 +45,15 @@ class MenuScene(Scene):
 
         self.chess_ranger_scene_button = ThemedButton("Chess Ranger Mode", btn_x, start_y + spacing * 0, btn_w, btn_h, font_size=font_size, action=lambda: self.start_puzzle("ranger"))
         self.chess_melee_scene_button = ThemedButton("Chess Melee Mode", btn_x, start_y + spacing * 1, btn_w, btn_h, font_size=font_size, action=lambda: self.start_puzzle("melee"))
-        self.creator_button = ThemedButton("Map Creator", btn_x, start_y + spacing * 2, btn_w, btn_h, font_size=font_size, action=lambda: self.manager.switch_scene('creator'))
-        self.settings_button = ThemedButton("Settings", btn_x, start_y + spacing * 3, btn_w, btn_h, font_size=font_size, action=lambda: self.manager.switch_scene('settings'))
-        self.credit_scene_button = ThemedButton("Credits", btn_x, start_y + spacing * 4, btn_w, btn_h, font_size=font_size)
-        self.quit_button = ThemedButton("Quit", btn_x, start_y + spacing * 5, btn_w, btn_h, font_size=font_size, action=self.quit)
+        self.chess_solo_scene_button = ThemedButton("Chess Solo Mode", btn_x, start_y + spacing * 2, btn_w, btn_h, font_size=font_size, action=lambda: self.start_puzzle("solo"))
+        self.creator_button = ThemedButton("Map Creator", btn_x, start_y + spacing * 3, btn_w, btn_h, font_size=font_size, action=lambda: self.manager.switch_scene('creator'))
+        self.settings_button = ThemedButton("Settings", btn_x, start_y + spacing * 4, btn_w, btn_h, font_size=font_size, action=lambda: self.manager.switch_scene('settings'))
+        self.credit_scene_button = ThemedButton("Credits", btn_x, start_y + spacing * 5, btn_w, btn_h, font_size=font_size)
+        self.quit_button = ThemedButton("Quit", btn_x, start_y + spacing * 6, btn_w, btn_h, font_size=font_size, action=self.quit)
 
         self.ranger_rect = pygame.Rect(btn_x, start_y + spacing * 0, btn_w, btn_h)
         self.melee_rect = pygame.Rect(btn_x, start_y + spacing * 1, btn_w, btn_h)
-
+        self.solo_rect = pygame.Rect(btn_x, start_y + spacing * 2, btn_w, btn_h)
         self.preview_size = min(self.SCREEN_WIDTH * 0.45, self.SCREEN_HEIGHT * 0.7)
         self.preview_sq_size = int(self.preview_size // 8)
         self.preview_x = self.SCREEN_WIDTH * 0.55
@@ -61,7 +62,7 @@ class MenuScene(Scene):
         self.preview_images = load_images(self.preview_sq_size)
         self.ranger_maps = self.load_maps("ranger")
         self.melee_maps = self.load_maps("melee")
-        
+        self.solo_maps = self.load_maps("solo")
         self.hovered_mode = None
         self.current_preview_map = None
 
@@ -92,7 +93,8 @@ class MenuScene(Scene):
             target_mode = "ranger"
         elif self.melee_rect.collidepoint(mouse_pos):
             target_mode = "melee"
-        
+        elif self.solo_rect.collidepoint(mouse_pos):  
+            target_mode = "solo"
         if target_mode != self.hovered_mode:
             self.hovered_mode = target_mode
             
@@ -100,12 +102,16 @@ class MenuScene(Scene):
                 self.current_preview_map = random.choice(self.ranger_maps)
             elif target_mode == "melee" and self.melee_maps:
                 self.current_preview_map = random.choice(self.melee_maps)
+            elif target_mode == "solo" and self.solo_maps:  # 👈 THÊM MỚI
+                self.current_preview_map = random.choice(self.solo_maps)
             else:
                 self.current_preview_map = None
 
         for event in event_list:
             if self.chess_ranger_scene_button.check_click(event): pass
             elif self.chess_melee_scene_button.check_click(event): pass
+            elif self.chess_solo_scene_button.check_click(event):  
+                pass
             elif self.creator_button.check_click(event): pass
             elif self.settings_button.check_click(event): pass
             elif self.credit_scene_button.check_click(event): pass
@@ -117,6 +123,7 @@ class MenuScene(Scene):
         self.logo_image.draw(screen)
         self.chess_ranger_scene_button.draw(screen)
         self.chess_melee_scene_button.draw(screen)
+        self.chess_solo_scene_button.draw(screen)
         self.creator_button.draw(screen)
         self.settings_button.draw(screen)
         self.credit_scene_button.draw(screen)
