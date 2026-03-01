@@ -53,17 +53,13 @@ class ChessMeleeBoard(Board):
                     
         return moves
 
-
 class ChessSoloBoard(Board):
     def __init__(self, board: list[list[int]] = [[0 for _ in range(8)] for _ in range(8)]) -> None:
         super().__init__(board)
-        
         self.move_count: dict[tuple[int, int], int] = {}
-        
         self._initialize_move_count()
         
     def get_piece_move_count(self, pos: tuple[int, int]) -> int:
-        """Lấy số lần đã di chuyển của quân tại vị trí pos"""
         return self.move_count.get(pos, 0)
 
     def _initialize_move_count(self) -> None:
@@ -76,27 +72,24 @@ class ChessSoloBoard(Board):
     def import_board(self, board: list[list[int]]) -> None:
         super().import_board(board)
         self._initialize_move_count()
+    
     def is_valid_move(self, from_pos: tuple[int, int], to_pos: tuple[int, int]) -> bool:
         r1, c1 = from_pos
         r2, c2 = to_pos
         
-     
         if not (0 <= r1 < 8 and 0 <= c1 < 8 and 0 <= r2 < 8 and 0 <= c2 < 8):
             return False
         
         piece = self.board[r1][c1]
         target = self.board[r2][c2]
         
-    
         if piece is None or target is None:
             return False
    
         if piece_to_int[type(target)] == 6: 
             return False  
         
-        
         if self.move_count.get(from_pos, 0) >= 2:
-
             return False
         
         move_delta = (r2 - r1, c2 - c1)
@@ -108,6 +101,7 @@ class ChessSoloBoard(Board):
             return False
         
         return True
+
     def get_all_valid_moves(self, specific_pos: tuple[int, int] | None = None) -> list[tuple[int, int, int, int]]:
         moves = []
         
@@ -130,31 +124,17 @@ class ChessSoloBoard(Board):
         return moves
     
     def move_piece(self, from_pos: tuple[int, int], to_pos: tuple[int, int]) -> bool:
-        print(f"\n=== MOVE PIECE DEBUG ===")
-        print(f"From: {from_pos}, To: {to_pos}")
-        print(f"move_count before anything: {dict(self.move_count)}")
-        
-        if not self.is_valid_move(from_pos, to_pos):
-            print("Invalid move!")
-            return False
-        
-        print(f"Move is valid!")
         if not self.is_valid_move(from_pos, to_pos):
             return False
-        
-        r1, c1 = from_pos
+        r1, c1 = from_pos 
         r2, c2 = to_pos
         self.move_count[from_pos] = self.move_count.get(from_pos, 0) + 1
-        print(self.move_count.get(from_pos, 0))
        
         self.board[r2][c2] = self.board[r1][c1]
         self.board[r1][c1] = None
         self.move_count[(r2, c2)] = self.move_count.pop(from_pos)
-        print(self.move_count[(r2, c2)])
-        
         
         return True
-
 
 MODE={
     "ranger": {
@@ -224,6 +204,7 @@ class ChessPuzzle:
             self.board.waiting_turn = turn
         if count is not None and hasattr(self.board, "move_count"):
             self.board.move_count = count
+
     def step(self, action: tuple[int, int, int, int]):
         success = self.board.move_piece((action[0], action[1]), (action[2], action[3]))
         
@@ -270,6 +251,7 @@ class ChessPuzzle:
             self.board.waiting_turn = True
         if count is not None and hasattr(self.board, "move_count"):
             self.board.move_count = count
+
     def get_observation(self):
         return np.array(self.board.export_board(), dtype=np.int8)
     
@@ -289,6 +271,7 @@ class ChessPuzzle:
             self.board.waiting_turn = state["turn"]
         if state["move_count"] is not None and hasattr(self.board, "move_count"):
             self.board.move_count = state["move_count"]
+
     def calculate_heuristic(self, state=None) -> int:
         # pieces_count = self.board.count_pieces()
         # if pieces_count <= 1: return 0

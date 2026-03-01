@@ -1,5 +1,5 @@
 {
-    "search_animation": false,
+    "search_animation": true,
     "play_anim_duration": 300,
     "search_anim_duration": 10,
     "fps": 120
