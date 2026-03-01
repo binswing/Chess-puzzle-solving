@@ -13,7 +13,16 @@ from src.ui.element import *
 from src.ui.algorithm_handler import AlgorithmHandler
 from src.entities.chess import ChessPuzzle
 
-
+def darken_image(image_surface, factor=0.5):
+    """
+    Làm tối một surface
+    factor = 0.0: giữ nguyên
+    factor = 0.3: tối 30% (đã đi 1 lần)
+    factor = 0.7: tối 70% (đã đi 2 lần - hết lượt)
+    """
+    dark_surface = image_surface.copy()
+    dark_surface.fill((0, 0, 0, int(255 * factor)), special_flags=pygame.BLEND_RGBA_MULT)
+    return dark_surface
 class PuzzleLogic:
     def __init__(self, mode, square_size, board_layout: list[list[int]] | None = None):
         self.mode = mode
@@ -446,6 +455,9 @@ class PuzzleScene(Scene):
                 screen.blit(s, (self.BOARD_X + hover_col * self.SQUARE_SIZE, self.BOARD_Y + hover_row * self.SQUARE_SIZE))
 
         board = self.logic.get_board()
+        move_counts = {}
+        if self.mode == "solo" and hasattr(self.logic.puzzle.board, "move_count"):
+            move_counts = self.logic.puzzle.board.move_count
         for r in range(BOARD_ROWS):
             for c in range(BOARD_COLS):
                 piece = board[r][c]
@@ -454,7 +466,19 @@ class PuzzleScene(Scene):
                     if self.animating and (r, c) == (self.final_move_data[0], self.final_move_data[1]): continue
                     x_pos = self.BOARD_X + (c * self.SQUARE_SIZE)
                     y_pos = self.BOARD_Y + (r * self.SQUARE_SIZE)
-                    screen.blit(self.logic.get_image(piece), (x_pos, y_pos))
+                    image = self.logic.get_image(piece)
+                
+                    
+                    if self.mode == "solo":
+                        move_count = move_counts.get((r, c), 0)  
+                        if move_count == 1:
+                            
+                            image = darken_image(image, 0.3)
+                        elif move_count >= 2:
+                            
+                            image = darken_image(image, 0.7)
+                    
+                    screen.blit(image, (x_pos, y_pos))
         if self.valid_moves: 
             for (r, c) in self.valid_moves:
                 x_pos = self.BOARD_X + (c * self.SQUARE_SIZE)

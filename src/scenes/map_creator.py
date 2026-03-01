@@ -82,6 +82,12 @@ class MapCreatorScene(Scene):
         if self.is_play_mode: return
         if self.mode == "ranger":
             self.mode = "melee"
+        elif self.mode == "melee":
+            self.mode = "solo"
+            for r in range(8):
+                for c in range(8):
+                    if self.board_data[r][c] < 0:
+                        self.board_data[r][c] = abs(self.board_data[r][c])
         else:
             self.mode = "ranger"
             for r in range(8):
@@ -104,7 +110,19 @@ class MapCreatorScene(Scene):
             if count < 2:
                 self.feedback.show("Need 2+ pieces!", True)
                 return
+            if self.mode == "solo":
+                has_king = 0
+                for r in range(8):
+                    for c in range(8):
+                        if abs(self.board_data[r][c]) == 6:  # King
+                            has_king += 1 
 
+                if  has_king == 0:
+                    self.feedback.show("Solo mode needs a King!", True)
+                    return
+                elif has_king >1:
+                    self.feedback.show("Solo mode can only have one King!", True)
+                    return
             self.backup_board_data = copy.deepcopy(self.board_data)
             puzzle_data = { "board": self.board_data, "turn": True }
             self.temp_game_env = ChessPuzzle(self.mode, puzzle_data)
@@ -279,7 +297,8 @@ class MapCreatorScene(Scene):
         for row in range(6):
             for col in range(3):
                 if self.mode == "ranger" and col == 2: continue
-                
+                if self.mode == "solo" and col == 2: continue
+
                 code = None
                 if col == 0:
                     if row == 0: code = 0 
@@ -354,12 +373,29 @@ class MapCreatorScene(Scene):
         if self.is_play_mode:
             self.feedback.show("Stop testing first!", True)
             return
-
+        
         count = sum(1 for r in self.board_data for c in r if c != 0)
         if count < 2:
             self.feedback.show("Map too empty!", True)
             return
-
+        if self.mode == "solo":
+            has_king = False
+            king_count = 0
+            for r in range(8):
+                for c in range(8):
+                    if abs(self.board_data[r][c]) == 6:
+                        has_king = True
+                        king_count += 1
+                    elif self.board_data[r][c] < 0:
+                        self.feedback.show("Solo mode cannot have black pieces!", True)
+                        return
+            
+            if not has_king:
+                self.feedback.show("Solo mode needs a King!", True)
+                return
+            if king_count > 1:
+                self.feedback.show("Solo mode can only have one King!", True)
+                return
         self.feedback.show("Checking Solvability...", False)
         self.draw() 
         pygame.display.flip()
@@ -389,7 +425,7 @@ class MapCreatorScene(Scene):
             self.feedback.show("Error checking map!", True)
             return
 
-        folder = "chess_ranger" if self.mode == "ranger" else "chess_melee"
+        folder = "chess_ranger" if self.mode == "ranger" else "chess_melee" if self.mode == "melee" else "chess_solo"
         filepath = DATA_URL + f'{folder}/puzzle_map.json'
         
         os.makedirs(os.path.dirname(filepath), exist_ok=True)

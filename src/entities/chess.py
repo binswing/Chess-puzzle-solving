@@ -61,6 +61,10 @@ class ChessSoloBoard(Board):
         self.move_count: dict[tuple[int, int], int] = {}
         
         self._initialize_move_count()
+        
+    def get_piece_move_count(self, pos: tuple[int, int]) -> int:
+        """Lấy số lần đã di chuyển của quân tại vị trí pos"""
+        return self.move_count.get(pos, 0)
 
     def _initialize_move_count(self) -> None:
         self.move_count = {}
@@ -90,8 +94,9 @@ class ChessSoloBoard(Board):
         if piece_to_int[type(target)] == 6: 
             return False  
         
- 
+        
         if self.move_count.get(from_pos, 0) >= 2:
+
             return False
         
         move_delta = (r2 - r1, c2 - c1)
@@ -125,19 +130,28 @@ class ChessSoloBoard(Board):
         return moves
     
     def move_piece(self, from_pos: tuple[int, int], to_pos: tuple[int, int]) -> bool:
+        print(f"\n=== MOVE PIECE DEBUG ===")
+        print(f"From: {from_pos}, To: {to_pos}")
+        print(f"move_count before anything: {dict(self.move_count)}")
+        
+        if not self.is_valid_move(from_pos, to_pos):
+            print("Invalid move!")
+            return False
+        
+        print(f"Move is valid!")
         if not self.is_valid_move(from_pos, to_pos):
             return False
         
         r1, c1 = from_pos
         r2, c2 = to_pos
         self.move_count[from_pos] = self.move_count.get(from_pos, 0) + 1
-        eaten_pos = to_pos
+        print(self.move_count.get(from_pos, 0))
+       
         self.board[r2][c2] = self.board[r1][c1]
         self.board[r1][c1] = None
         self.move_count[(r2, c2)] = self.move_count.pop(from_pos)
-
-        if eaten_pos in self.move_count:
-            del self.move_count[eaten_pos]
+        print(self.move_count[(r2, c2)])
+        
         
         return True
 
@@ -221,7 +235,7 @@ class ChessPuzzle:
         else:
             reward = 1
             piece_count = self.board.count_pieces()
-            print(f"DEBUG: piece_count = {piece_count}")
+            
             if piece_count == 1:
                 
                 reward = 100
@@ -229,7 +243,7 @@ class ChessPuzzle:
                 info['msg'] = "Solved!"
             elif piece_count > 1:
                 all_moves = self.board.get_all_valid_moves()
-                print(all_moves)
+                
                 if len(all_moves) == 0:
                     reward = -50
                     done = True
