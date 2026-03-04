@@ -94,7 +94,7 @@ class PuzzleLogic:
                 scene.trigger_move((move[0], move[1]), (move[2], move[3]), settings.SEARCH_ANIMATION_DURATION)
             
             iterations += 1
-            if iterations > 10000:
+            if iterations > 50000:
                 yield ("error", "Timeout") 
                 break
             yield ("running", iterations) 
