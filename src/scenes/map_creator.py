@@ -374,7 +374,7 @@ class MapCreatorScene(Scene):
             solver = AStarSolver(env)
             steps = 0
             solved = False
-            while steps < 5000:
+            while steps < 50000:
                 state, move = solver.take_action()
                 if solver.solution_found:
                     solved = True

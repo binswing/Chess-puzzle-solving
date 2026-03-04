@@ -36,11 +36,11 @@ class BFSSolver(ChessSolver):
         board_tuple = tuple(tuple(row) for row in state["board"])
         turn = state["turn"]
         
-        move_count = state.get("move_count", {})
-        move_items = tuple(sorted(
-            (f"{k[0]},{k[1]}", v) for k, v in move_count.items()
-        ))
-        
+        move_items = None
+        if state.get("move_count") is not None:
+            move_items = tuple(sorted(
+                (f"{k[0]},{k[1]}", v) for k, v in state.get("move_count").items()
+            ))
         return (board_tuple, turn, move_items)
 
     def take_action(self):
