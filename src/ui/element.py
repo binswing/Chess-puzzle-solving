@@ -264,6 +264,8 @@ class StatsPanel(UIElement):
         self.path_length = 0
         self.status = "Ready"
         self.path = None
+        self.max_node_in_memory = 0
+        self.compute_time = 0.0
         
         self.lines_to_draw = []
         self.line_height = int(font_size * 1.2)
@@ -273,9 +275,11 @@ class StatsPanel(UIElement):
         
         self.recalculate_layout()
 
-    def update_stats(self, nodes=None, status=None, path=None):
+    def update_stats(self, nodes=None, status=None, path=None, max_node_in_memory=None, compute_time = None):
         if nodes is not None: self.nodes_visited = nodes
         if status is not None: self.status = status
+        if max_node_in_memory is not None: self.max_node_in_memory = max_node_in_memory
+        if compute_time is not None: self.compute_time = compute_time
         if path is not None: 
             self.path = path
             self.path_length = len(path)
@@ -284,11 +288,15 @@ class StatsPanel(UIElement):
 
     def recalculate_layout(self):
         self.lines_to_draw = self.base_text_list[:]
-        self.lines_to_draw.append(f"Status: {self.status}")
-        self.lines_to_draw.append(f"Nodes: {self.nodes_visited}")
+        self.lines_to_draw[-1] += f" - {self.status}"
         
         if self.path is not None:
-            self.lines_to_draw.append(f"Steps: {self.path_length}")
+            if self.nodes_visited:
+                self.lines_to_draw.append(f"Nodes: {self.nodes_visited}")
+            if self.compute_time:
+                self.lines_to_draw.append(f"Compute Time: {self.compute_time * 1000:.2f} ms")
+            if self.max_node_in_memory:
+                self.lines_to_draw.append(f"Max Nodes in Memory: {self.max_node_in_memory}")
             if self.path_length > 0:
                 self.lines_to_draw.append("Path:")
                 moves_str = []

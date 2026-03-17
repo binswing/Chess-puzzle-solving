@@ -287,53 +287,41 @@ class ChessPuzzle:
             self.board.move_count = copy.deepcopy(state["move_count"])
 
     def calculate_heuristic(self, state=None) -> int:
-        # pieces_count = self.board.count_pieces()
-        # if pieces_count <= 1: return 0
-        
-        # # Reuse your valid moves logic to build the connectivity graph
-        # # This is the "Island Detection" logic we discussed
-        # valid_moves = self.board.get_all_valid_moves()
-        # pieces_positions = []
-        
-        # # Get all piece locations
-        # grid = self.board.get_board()
-        # for r in range(8):
-        #     for c in range(8):
-        #         if grid[r][c] is not None:
-        #             pieces_positions.append((r,c))
-
-        # # Build Graph
-        # adj = {pos: set() for pos in pieces_positions}
-        # for r1, c1, r2, c2 in valid_moves:
-        #     if (r1, c1) in adj and (r2, c2) in adj:
-        #         adj[(r1, c1)].add((r2, c2))
-        #         adj[(r2, c2)].add((r1, c1)) # Undirected
-
-        # # Count Islands
-        # visited = set()
-        # islands = 0
-        # for p in pieces_positions:
-        #     if p not in visited:
-        #         islands += 1
-        #         stack = [p]
-        #         visited.add(p)
-        #         while stack:
-        #             curr = stack.pop()
-        #             for neighbor in adj[curr]:
-        #                 if neighbor not in visited:
-        #                     visited.add(neighbor)
-        #                     stack.append(neighbor)
-
-        # # SCORING: 
-        # # Base cost = Number of pieces left
-        # # Penalty = If >1 island, massive penalty (unsolvable)
-        # if islands > 1:
-        #     return 1000 + pieces_count 
-        
-        # return pieces_count
-
         pieces_count = self.board.count_pieces()
-        if pieces_count <= 1: 
-            return 0
-            
-        return pieces_count - 1
+        if pieces_count <= 1: return 0
+
+        # Island Detection
+        valid_moves = self.board.get_all_valid_moves()
+        pieces_positions = []
+        
+        # Get all piece locations
+        grid = self.board.get_board()
+        for r in range(8):
+            for c in range(8):
+                if grid[r][c] is not None:
+                    pieces_positions.append((r,c))
+
+        # Build Graph
+        adj = {pos: set() for pos in pieces_positions}
+        for r1, c1, r2, c2 in valid_moves:
+            if (r1, c1) in adj and (r2, c2) in adj:
+                adj[(r1, c1)].add((r2, c2))
+                adj[(r2, c2)].add((r1, c1)) # Undirected
+
+        # Count Islands
+        visited = set()
+        islands = 0
+        for p in pieces_positions:
+            if p not in visited:
+                islands += 1
+                stack = [p]
+                visited.add(p)
+                while stack:
+                    curr = stack.pop()
+                    for neighbor in adj[curr]:
+                        if neighbor not in visited:
+                            visited.add(neighbor)
+                            stack.append(neighbor)
+
+        # SCORING: 
+        return 65*(islands-1) + pieces_count

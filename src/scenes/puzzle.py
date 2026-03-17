@@ -83,9 +83,24 @@ class PuzzleLogic:
         temp_env = ChessPuzzle(self.mode, self.puzzle.get_state())
         solver = algorithm_class(temp_env)
         iterations = 0
+        max_frontier_size = 0
+        compute_time = 0.0
         
         while True:
+            start_t = time.perf_counter()
             state, move = solver.take_action()
+            compute_time += (time.perf_counter() - start_t)
+
+            current_frontier = 0
+            if hasattr(solver, 'pq'):
+                current_frontier = len(solver.pq)
+            elif hasattr(solver, 'queue'):
+                current_frontier = len(solver.queue)
+            elif hasattr(solver, 'stack'):
+                current_frontier = len(solver.stack)
+            if current_frontier > max_frontier_size:
+                max_frontier_size = current_frontier
+
             if state is None and move is None:
                 break
             
@@ -97,7 +112,7 @@ class PuzzleLogic:
             if iterations > 50000:
                 yield ("error", "Timeout") 
                 break
-            yield ("running", iterations) 
+            yield ("running", (iterations, max_frontier_size, compute_time)) 
 
         self.reset()
         if solver.solution_found:

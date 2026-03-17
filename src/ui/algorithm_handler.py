@@ -49,7 +49,7 @@ class AlgorithmHandler:
         self.scene.is_playing_solution = False
         self.scene.playback_queue = []
 
-        self.stats_panels[algorithm_name].update_stats(status="Starting...", nodes=0, path=[])
+        self.stats_panels[algorithm_name].update_stats(status="Starting...", nodes=0, path=[], max_node_in_memory=0, compute_time=0.0)
         
         algorithm_class = ALGORITHMS[algorithm_name]
         self.iterator = self.logic.solver_iterator(self.scene, algorithm_class)
@@ -63,7 +63,7 @@ class AlgorithmHandler:
             panel = self.stats_panels[self.active_algorithm_name]
             
             if status == "running":
-                panel.update_stats(nodes=data, status="Searching...")
+                panel.update_stats(nodes=data[0], max_node_in_memory=data[1], compute_time=data[2], status="Searching...")
             
             elif status == "finished":
                 self.solutions[self.active_algorithm_name] = data
@@ -110,4 +110,4 @@ class AlgorithmHandler:
         self.active_algorithm_name = None
         for name in self.solutions:
             self.solutions[name] = None
-            self.stats_panels[name].update_stats(status="Ready", nodes=0, path=[])
+            self.stats_panels[name].update_stats(status="Ready", nodes=0, path=[], max_node_in_memory=0, compute_time=0.0)
