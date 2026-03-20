@@ -1,5 +1,5 @@
 # Chess Puzzle Solving 
-
+![alt text](assets/images/app/CPS.png)
 <div align="center">
     <a href="https://www.python.org/downloads/release/python-31213/">
         <img src="https://img.shields.io/badge/Python-3.12%2B-blue" height="20" alt="Python 3.12+">

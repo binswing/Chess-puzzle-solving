@@ -26,12 +26,11 @@ class AlgorithmHandler:
         else:
             self.start_y = start_y
 
-        self.panel_width = scene.RIGHT_PANEL_WIDTH
+        self.panel_width = scene.RIGHT_PANEL_WIDTH + 1
         self.base_x = scene.SCREEN_WIDTH - self.panel_width - scene.MARGIN
         self.gap = int(scene.SCREEN_HEIGHT * 0.005)
 
-        adaptive_font_size = int(scene.SCREEN_HEIGHT * 0.0246)
-
+        adaptive_font_size = round(self.panel_width*0.067+0.9226)
         self.stats_panels = {
             "A*": StatsPanel(self.base_x, 0, self.panel_width, font_size=adaptive_font_size, text_list=["A* Status"]),
             "BFS": StatsPanel(self.base_x, 0, self.panel_width, font_size=adaptive_font_size, text_list=["BFS Status"]),
