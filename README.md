@@ -47,7 +47,7 @@ A Pygame-based chess puzzle game inspired by traditional chess mechanics but des
 ## 🧠 Algorithms Implemented
 
 The game models the board as a state-space graph to evaluate winning paths. 
-* **A\* Search (A\*):** Uses a sophisticated heuristic combining piece count with an "Island Detection" connectivity graph ($h = 65 \times (islands - 1) + pieces\_count$). It builds an undirected graph of valid captures to count isolated groups of pieces (islands), applying a massive penalty to disconnected boards. **The more islands there are, the higher the penalty**.
+* **A\* Search (A\*):** Uses a sophisticated heuristic combining piece count with an "Island Detection" connectivity graph ($h = 65 \times (islands - 1) + pieces\_ count$). It builds an undirected graph of valid captures to count isolated groups of pieces (islands), applying a massive penalty to disconnected boards. **The more islands there are, the higher the penalty**.
 * **Breadth-First Search (BFS):** Explores all possible capture sequences level by level.
 * **Depth-First Search (DFS):** Dives deep into specific capture sequences until it hits a dead end or solves the board.
 

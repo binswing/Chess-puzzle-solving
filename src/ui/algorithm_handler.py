@@ -8,6 +8,7 @@ from src.algorithms.BFS import BFSSolver
 from src.algorithms.DFS import DFSSolver
 from src.scenes.scene import Scene
 from src.ui.element import *
+import settings
 
 ALGORITHMS: dict[str, type[ChessSolver]]= {
     "A*": AStarSolver,
@@ -37,7 +38,8 @@ class AlgorithmHandler:
             "DFS": StatsPanel(self.base_x, 0, self.panel_width, font_size=adaptive_font_size, text_list=["DFS Status"])
         }
         
-        self.active_algorithm_name = None  
+        self.active_algorithm_name = None 
+        self.active_data = None
         self.iterator = None
         self.solutions = {"A*": None, "BFS": None, "DFS": None}
 
@@ -63,11 +65,13 @@ class AlgorithmHandler:
             panel = self.stats_panels[self.active_algorithm_name]
             
             if status == "running":
-                panel.update_stats(nodes=data[0], max_node_in_memory=data[1], compute_time=data[2], status="Searching...")
+                self.active_data = data
+                if settings.SEARCH_ANIMATION: 
+                    panel.update_stats(nodes=data[0], max_node_in_memory=data[1], compute_time=data[2], status="Searching...")
             
             elif status == "finished":
                 self.solutions[self.active_algorithm_name] = data
-                panel.update_stats(path=copy.deepcopy(data.get_final_path()), status="Solved!")
+                panel.update_stats(nodes=self.active_data[0], max_node_in_memory=self.active_data[1], compute_time=self.active_data[2], path=copy.deepcopy(data.get_final_path()), status="Solved!")
                 self.iterator = None 
                 self.active_algorithm_name = None 
             

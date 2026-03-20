@@ -6,7 +6,11 @@ from src.algorithms.algorithm import ChessSolver
 
 class AStarNode:
     def __init__(self, state, g, h, parent=None, action=None):
-        self.state = copy.deepcopy(state)
+        self.state = {
+            "board": [row[:] for row in state["board"]],
+            "turn": state["turn"],
+            "move_count": state["move_count"].copy() if state["move_count"] else None
+        }
         self.g = g
         self.h = h
         self.f = g + h
@@ -36,18 +40,30 @@ class AStarSolver(ChessSolver):
         self.solution_found = False
         self.final_node = None
 
-    def hash_state(self, state):
-        board_tuple = tuple(tuple(row) for row in state["board"])
-        turn = state["turn"]
+    # def hash_state(self, state):
+    #     board_tuple = tuple(tuple(row) for row in state["board"])
+    #     turn = state["turn"]
         
+    #     move_items = None
+    #     if state.get("move_count") is not None:
+    #         move_items = tuple(sorted(
+    #             (f"{k[0]},{k[1]}", v) for k, v in state.get("move_count").items()
+    #         ))
+        
+    #     return (board_tuple, turn, move_items)
+
+    def hash_state(self, state):
+        flat_board = tuple(item for row in state["board"] for item in row)
+        
+        turn = state["turn"]
         move_items = None
         if state.get("move_count") is not None:
-            move_items = tuple(sorted(
-                (f"{k[0]},{k[1]}", v) for k, v in state.get("move_count").items()
-            ))
-        
-        return (board_tuple, turn, move_items)
-
+            move_items = frozenset(
+                (k, v) for k, v in state["move_count"].items() if v > 0
+            )
+            
+        return (flat_board, turn, move_items)
+    
     def take_action(self):
         if self.solution_found or (not self.pq and not self.pending_moves and not self.current_parent_node):
             return None, None 

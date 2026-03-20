@@ -290,7 +290,6 @@ class ChessPuzzle:
         pieces_count = self.board.count_pieces()
         if pieces_count <= 1: return 0
 
-        # Island Detection
         valid_moves = self.board.get_all_valid_moves()
         pieces_positions = []
         
