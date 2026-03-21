@@ -16,7 +16,7 @@
     },
     "chess_solo":{
         "rules":[
-            "Pieces move as standard chess pieces.", 
+            "You can move a piece only TWICE.", 
             "You can perform only capture moves.", 
             "You are NOT allowed to capture the king.", 
             "The goal is to end up with one single piece(the King) on the board."
